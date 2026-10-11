@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>On mange quoi ?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Figtree:wght@500;700;800&display=swap">
+<style>
+:root {
+  --bg: #FFE14D; --ink: #1B1340; --card: #FFF8E6; --tomato: #FF4B2E; --mint: #2EC4A6;
+  --display: "Bowlby One", "Arial Black", Impact, sans-serif;
+  --body: "Figtree", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  margin: 0; background: var(--bg);
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 2px, transparent 2.5px);
+  background-size: 22px 22px; color: var(--ink); font-family: var(--body);
+  padding: 28px 16px 40px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; align-items: center; }
+h1 {
+  font-family: var(--display); font-size: clamp(2.6rem, 9vw, 5.4rem); line-height: .95; margin: 0;
+  text-align: center; text-wrap: balance; color: var(--ink);
+  text-shadow: 4px 4px 0 var(--tomato); transform: rotate(-2deg);
+}
+.sub { margin: -8px 0 0; font-weight: 700; font-size: 1.05rem; text-align: center; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; width: 100%; }
+@media (max-width: 640px) { .grid { grid-template-columns: 1fr; gap: 16px; } }
+.pick {
+  appearance: none; border: 4px solid var(--ink); border-radius: 22px;
+  background: var(--card); color: var(--ink); cursor: pointer;
+  padding: 18px 14px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  box-shadow: 7px 7px 0 var(--ink);
+  transition: transform .18s cubic-bezier(.3,1.6,.5,1), box-shadow .18s, opacity .25s, filter .25s;
+  font: inherit;
+}
+.pick:nth-child(1) { transform: rotate(-2.5deg); }
+.pick:nth-child(2) { transform: rotate(1.5deg); }
+.pick:nth-child(3) { transform: rotate(-1deg); }
+.pick:hover { transform: rotate(0) translate(-3px,-5px) scale(1.03); box-shadow: 11px 12px 0 var(--ink); }
+.pick:active { transform: translate(4px,4px); box-shadow: 2px 2px 0 var(--ink); }
+.pick svg { width: min(180px, 52vw); height: auto; display: block; }
+.pick .name { font-family: var(--display); font-size: 1.7rem; line-height: 1; }
+.pick .tag { font-weight: 700; font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; opacity: .7; }
+.pick:hover svg .blink, .pick.chosen svg .blink, .stage.landed svg .blink {
+  animation: wiggle .5s ease-in-out infinite alternate; transform-origin: center; transform-box: fill-box;
+}
+@keyframes wiggle { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+.grid.done .pick:not(.chosen) { opacity: .35; filter: grayscale(.8); transform: scale(.94); }
+.grid.done .pick.chosen { transform: rotate(0) scale(1.06); background: #fff; box-shadow: 10px 10px 0 var(--tomato); }
+.grid.rolling .pick.hl { transform: rotate(0) scale(1.05); box-shadow: 10px 10px 0 var(--mint); }
+.actions, .send { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; }
+.btn {
+  appearance: none; font: 800 1rem var(--body); cursor: pointer; text-decoration: none; display: inline-block;
+  padding: 13px 22px; border-radius: 999px; border: 3px solid var(--ink);
+  background: var(--ink); color: var(--bg); box-shadow: 4px 4px 0 var(--tomato);
+  transition: transform .12s, box-shadow .12s;
+}
+.btn.ghost { background: var(--card); color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.btn.sms { background: var(--mint); color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.btn:hover { transform: translate(-2px,-2px); }
+.btn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--ink); }
+.btn:disabled { opacity: .5; cursor: default; }
+.verdict { min-height: 3.4rem; text-align: center; font-family: var(--display); font-size: clamp(1.5rem, 5vw, 2.4rem); line-height: 1.1; }
+.verdict small { display: block; font-family: var(--body); font-weight: 700; font-size: 1rem; margin-top: 6px; }
+.pop { animation: pop .45s cubic-bezier(.3,1.8,.5,1); }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.send .hint { flex-basis: 100%; text-align: center; margin: 0; font-weight: 700; font-size: .9rem; opacity: .75; }
+
+/* Mode révélation (lien reçu) */
+.reveal { display: flex; flex-direction: column; align-items: center; gap: 22px; width: 100%; }
+.kicker { margin: 0; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; letter-spacing: .14em; }
+.kicker.drum { animation: drum .12s linear infinite alternate; }
+@keyframes drum { from { transform: translateX(-2px) rotate(-1deg); } to { transform: translateX(2px) rotate(1deg); } }
+.stage {
+  width: min(300px, 74vw); aspect-ratio: 1; max-width: 100%;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--card); border: 5px solid var(--ink); box-shadow: 9px 9px 0 var(--ink);
+}
+.stage svg { width: 82%; height: auto; display: block; }
+.stage.landed { background: #fff; box-shadow: 12px 12px 0 var(--tomato); animation: land .7s cubic-bezier(.3,1.7,.5,1); }
+@keyframes land { 0% { transform: scale(.5) rotate(-14deg); } 60% { transform: scale(1.15) rotate(5deg); } 100% { transform: scale(1) rotate(0); } }
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div class="wrap">
+  <h1 id="title">On mange quoi&nbsp;?</h1>
+
+  <!-- MODE CHOIX -->
+  <div id="main" class="wrap" style="width:100%">
+    <p class="sub">Tape sur ton camp. Ou laisse le destin trancher.</p>
+
+    <div class="grid" id="grid">
+      <button class="pick" data-k="pizza" data-msg="Pizza. Pas de débat." data-sub="Ananas : à tes risques et périls.">
+        <svg viewBox="0 0 200 200" aria-hidden="true"><g class="blink">
+          <path d="M100 185 L22 42 Q100 8 178 42 Z" fill="#FFC94A" stroke="#1B1340" stroke-width="6" stroke-linejoin="round"/>
+          <path d="M22 42 Q100 8 178 42 L170 58 Q100 26 30 58 Z" fill="#E59A3A" stroke="#1B1340" stroke-width="6" stroke-linejoin="round"/>
+          <path d="M40 66 Q60 80 52 96 Q70 92 74 110 Q88 100 100 116 Q112 100 126 110 Q130 92 148 96 Q140 80 160 66 Q100 44 40 66 Z" fill="#E8352B" opacity=".9"/>
+          <circle cx="68" cy="128" r="10" fill="#B8231C" stroke="#1B1340" stroke-width="4"/>
+          <circle cx="132" cy="128" r="10" fill="#B8231C" stroke="#1B1340" stroke-width="4"/>
+          <circle cx="100" cy="158" r="8" fill="#B8231C" stroke="#1B1340" stroke-width="4"/>
+          <circle cx="82" cy="80" r="11" fill="#fff" stroke="#1B1340" stroke-width="4"/>
+          <circle cx="118" cy="80" r="11" fill="#fff" stroke="#1B1340" stroke-width="4"/>
+          <circle cx="85" cy="82" r="5" fill="#1B1340"/><circle cx="121" cy="82" r="5" fill="#1B1340"/>
+          <path d="M86 100 Q100 116 114 100" fill="#1B1340" stroke="#1B1340" stroke-width="4" stroke-linecap="round"/>
+          <path d="M96 104 Q100 112 104 104" fill="#FF7AA8"/>
+          <path d="M150 44 Q156 60 150 74" fill="none" stroke="#FFF3C4" stroke-width="5" stroke-linecap="round"/>
+        </g></svg>
+        <span class="name">Pizza</span><span class="tag">Team fromage qui file</span>
+      </button>
+
+      <button class="pick" data-k="burger" data-msg="Burger. Double, évidemment." data-sub="Frites obligatoires, c'est la loi.">
+        <svg viewBox="0 0 200 200" aria-hidden="true"><g class="blink">
+          <path d="M30 92 Q30 30 100 30 Q170 30 170 92 Z" fill="#F2A33A" stroke="#1B1340" stroke-width="6" stroke-linejoin="round"/>
+          <g fill="#FFF3C4"><ellipse cx="70" cy="50" rx="5" ry="3" transform="rotate(-20 70 50)"/><ellipse cx="100" cy="42" rx="5" ry="3"/><ellipse cx="130" cy="50" rx="5" ry="3" transform="rotate(20 130 50)"/><ellipse cx="85" cy="60" rx="4" ry="2.5"/><ellipse cx="118" cy="62" rx="4" ry="2.5"/></g>
+          <path d="M24 98 Q40 88 56 100 Q72 88 88 100 Q104 88 120 100 Q136 88 152 100 Q166 88 176 98 L172 108 L28 108 Z" fill="#5BCB4E" stroke="#1B1340" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M28 108 L172 108 L160 132 L120 120 L100 140 L80 120 L40 132 Z" fill="#FFD23F" stroke="#1B1340" stroke-width="5" stroke-linejoin="round"/>
+          <rect x="26" y="118" width="148" height="26" rx="13" fill="#7A3B1E" stroke="#1B1340" stroke-width="6"/>
+          <path d="M32 150 L168 150 Q168 178 100 178 Q32 178 32 150 Z" fill="#F2A33A" stroke="#1B1340" stroke-width="6" stroke-linejoin="round"/>
+          <circle cx="80" cy="70" r="11" fill="#fff" stroke="#1B1340" stroke-width="4"/>
+          <circle cx="120" cy="70" r="11" fill="#fff" stroke="#1B1340" stroke-width="4"/>
+          <circle cx="78" cy="72" r="5" fill="#1B1340"/><circle cx="118" cy="72" r="5" fill="#1B1340"/>
+          <path d="M70 56 L88 60" stroke="#1B1340" stroke-width="4" stroke-linecap="round"/>
+          <path d="M130 56 L112 60" stroke="#1B1340" stroke-width="4" stroke-linecap="round"/>
+          <path d="M88 86 Q100 80 112 86" fill="none" stroke="#1B1340" stroke-width="4" stroke-linecap="round"/>
+        </g></svg>
+        <span class="name">Burger</span><span class="tag">Team sauce partout</span>
+      </button>
+
+      <button class="pick" data-k="chinois" data-msg="Chinois. Nouilles sautées en vue." data-sub="Les baguettes, c'est toi qui gères.">
+        <svg viewBox="0 0 200 200" aria-hidden="true"><g class="blink">
+          <path d="M120 20 L150 70" stroke="#C98A4B" stroke-width="7" stroke-linecap="round"/>
+          <path d="M138 16 L158 70" stroke="#C98A4B" stroke-width="7" stroke-linecap="round"/>
+          <path d="M70 52 Q80 30 92 50 Q100 28 110 50 Q122 32 128 54" fill="none" stroke="#FFD23F" stroke-width="7" stroke-linecap="round"/>
+          <path d="M50 64 L150 64 L140 52 L60 52 Z" fill="#F4F4F4" stroke="#1B1340" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M40 66 L160 66 L144 182 L56 182 Z" fill="#FFFFFF" stroke="#1B1340" stroke-width="6" stroke-linejoin="round"/>
+          <path d="M44 66 L76 66 L70 54" fill="none" stroke="#1B1340" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M156 66 L124 66 L130 54" fill="none" stroke="#1B1340" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M50 92 L150 92" stroke="#E8352B" stroke-width="5"/>
+          <circle cx="100" cy="150" r="17" fill="#E8352B" stroke="#1B1340" stroke-width="4"/>
+          <path d="M92 150 L108 150 M100 142 L100 158 M93 143 L107 157" stroke="#FFF8E6" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="80" cy="112" r="11" fill="#fff" stroke="#1B1340" stroke-width="4"/>
+          <circle cx="120" cy="112" r="11" fill="#fff" stroke="#1B1340" stroke-width="4"/>
+          <path d="M73 112 Q80 104 87 112" fill="none" stroke="#1B1340" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="121" cy="114" r="5" fill="#1B1340"/>
+          <ellipse cx="66" cy="128" rx="7" ry="4" fill="#FF9AB8"/><ellipse cx="134" cy="128" rx="7" ry="4" fill="#FF9AB8"/>
+          <path d="M92 126 Q100 132 108 126" fill="none" stroke="#1B1340" stroke-width="4" stroke-linecap="round"/>
+        </g></svg>
+        <span class="name">Chinois</span><span class="tag">Team baguettes</span>
+      </button>
+    </div>
+
+    <div class="verdict" id="verdict" aria-live="polite">&nbsp;</div>
+
+    <div class="actions">
+      <button class="btn" id="roll">Laisse le hasard choisir</button>
+      <button class="btn ghost" id="reset" hidden>Je change d'avis</button>
+    </div>
+
+    <div class="send" id="send" hidden>
+      <a class="btn sms" id="wa" href="https://wa.me/" target="_blank" rel="noopener">Envoyer sur WhatsApp</a>
+      <a class="btn ghost" id="sms" href="sms:">SMS</a>
+      <button class="btn ghost" id="copy">Copier</button>
+      <p class="hint" id="hint"></p>
+    </div>
+  </div>
+
+  <!-- MODE RÉVÉLATION (quand on ouvre le lien reçu) -->
+  <div id="reveal" class="reveal" hidden>
+    <p class="kicker drum" id="kicker">Roulement de tambour…</p>
+    <div class="stage" id="stage"></div>
+    <div class="verdict" id="rverdict" aria-live="polite">&nbsp;</div>
+    <div class="actions">
+      <button class="btn" id="replay" hidden>Rejouer</button>
+      <a class="btn ghost" id="own" href="./">Faire mon choix</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // >>> TON NUMÉRO ICI, format international sans + ni espaces (ex : '33612345678') <<<
+  const PHONE = '';
+
+  const LABELS = { pizza: 'PIZZA 🍕', burger: 'BURGER 🍔', chinois: 'CHINOIS 🥡' };
+  const KEYS = Object.keys(LABELS);
+  const $ = id => document.getElementById(id);
+  const grid = $('grid'), picks = [...grid.querySelectorAll('.pick')];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const baseUrl = location.origin + location.pathname;
+
+  /* ---------- Confettis ---------- */
+  function confetti() {
+    if (reduce) return;
+    const c = $('confetti'), x = c.getContext('2d'), dpr = devicePixelRatio || 1;
+    const W = innerWidth, H = innerHeight;
+    c.width = W * dpr; c.height = H * dpr; x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cols = ['#FF4B2E', '#2EC4A6', '#1B1340', '#FFF8E6', '#E8352B'];
+    const ps = Array.from({ length: 150 }, () => ({
+      x: W / 2, y: H / 2.5, vx: (Math.random() - .5) * 16, vy: -Math.random() * 15 - 4,
+      s: 6 + Math.random() * 7, r: Math.random() * 6, vr: (Math.random() - .5) * .35,
+      c: cols[Math.random() * cols.length | 0]
+    }));
+    let t = 0;
+    (function f() {
+      x.clearRect(0, 0, W, H);
+      ps.forEach(p => {
+        p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c;
+        x.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); x.restore();
+      });
+      if (++t < 200) requestAnimationFrame(f); else x.clearRect(0, 0, W, H);
+    })();
+  }
+
+  /* ---------- Mode révélation ---------- */
+  const choix = new URLSearchParams(location.search).get('choix');
+  if (KEYS.includes(choix)) {
+    $('main').hidden = true;
+    $('reveal').hidden = false;
+    $('title').innerHTML = 'Ce soir on mange…';
+    const stage = $('stage'), kicker = $('kicker'), rv = $('rverdict'), replay = $('replay');
+    const target = KEYS.indexOf(choix);
+    const show = i => { stage.innerHTML = picks[i % 3].querySelector('svg').outerHTML; };
+
+    function land() {
+      show(target);
+      stage.classList.remove('landed'); void stage.offsetWidth; stage.classList.add('landed');
+      kicker.classList.remove('drum');
+      kicker.textContent = 'Verdict';
+      const el = picks[target];
+      rv.innerHTML = `${el.dataset.msg}<small>${el.dataset.sub}</small>`;
+      rv.classList.remove('pop'); void rv.offsetWidth; rv.classList.add('pop');
+      replay.hidden = false;
+      confetti();
+    }
+    function play() {
+      replay.hidden = true;
+      stage.classList.remove('landed');
+      rv.innerHTML = '&nbsp;';
+      kicker.textContent = 'Roulement de tambour…';
+      kicker.classList.add('drum');
+      if (reduce) return land();
+      const steps = 18 + target;            // 18 est multiple de 3 : on finit pile sur le bon choix
+      let i = 0, delay = 60;
+      (function tick() {
+        show(i);
+        if (i >= steps) return land();
+        i++; delay *= 1.11;
+        setTimeout(tick, delay);
+      })();
+    }
+    replay.addEventListener('click', play);
+    setTimeout(play, 500);
+    return;
+  }
+
+  /* ---------- Mode choix ---------- */
+  const verdict = $('verdict'), roll = $('roll'), reset = $('reset');
+  const send = $('send'), sms = $('sms'), wa = $('wa'), copy = $('copy'), hint = $('hint');
+  let busy = false, text = '';
+
+  function choose(el) {
+    picks.forEach(p => p.classList.toggle('chosen', p === el));
+    grid.classList.remove('rolling'); grid.classList.add('done');
+    verdict.innerHTML = `${el.dataset.msg}<small>${el.dataset.sub}</small>`;
+    verdict.classList.remove('pop'); void verdict.offsetWidth; verdict.classList.add('pop');
+    reset.hidden = false;
+    const link = `${baseUrl}?choix=${el.dataset.k}`;
+    text = `J'ai choisi pour ce soir 👀 Découvre ici : ${link}`;
+    const body = encodeURIComponent(text);
+    const sep = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) ? '&' : '?';
+    wa.href = `https://wa.me/${PHONE}?text=${body}`;
+    sms.href = `sms:${PHONE ? '+' + PHONE : ''}${sep}body=${body}`;
+    hint.textContent = 'Le message part avec un lien qui révèle ton choix en animation.';
+    send.hidden = false;
+  }
+  function clear() {
+    picks.forEach(p => p.classList.remove('chosen', 'hl'));
+    grid.classList.remove('done', 'rolling');
+    verdict.innerHTML = '&nbsp;';
+    reset.hidden = true; send.hidden = true;
+  }
+  copy.addEventListener('click', () => {
+    const done = () => { copy.textContent = 'Copié ✓'; hint.textContent = 'Message + lien copiés. Colle-les où tu veux.'; setTimeout(() => copy.textContent = 'Copier', 2000); };
+    try { navigator.clipboard.writeText(text).then(done, () => hint.textContent = text); }
+    catch (e) { hint.textContent = text; }
+  });
+  picks.forEach(p => p.addEventListener('click', () => { if (!busy) choose(p); }));
+  reset.addEventListener('click', clear);
+  roll.addEventListener('click', () => {
+    if (busy) return;
+    clear();
+    const target = Math.floor(Math.random() * 3);
+    if (reduce) return choose(picks[target]);
+    busy = true; roll.disabled = true; grid.classList.add('rolling');
+    const steps = 12 + target;
+    let i = 0, delay = 70;
+    (function tick() {
+      picks.forEach(p => p.classList.remove('hl'));
+      const cur = picks[i % 3]; cur.classList.add('hl');
+      if (i >= steps) { busy = false; roll.disabled = false; cur.classList.remove('hl'); return choose(cur); }
+      i++; delay *= 1.12; setTimeout(tick, delay);
+    })();
+  });
+})();
+</script>
+</body>
+</html>
